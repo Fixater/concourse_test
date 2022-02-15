@@ -1,6 +1,15 @@
+resources:
+  - name: repo
+    type: git
+    source:
+      uri: https://github.com/Fixater/concourse_test.git
+
 jobs:
   - name: hello-world-job
     plan:
+    # Add a get step referencing the resource
+      - get: repo
+        trigger: true # tell Concourse to trigger this job when new versions are emitted
       - task: hello-world-task
         config:
           platform: linux
@@ -10,4 +19,4 @@ jobs:
               repository: busybox
           run:
             path: echo
-            args: ["Hello World!"]
+            args: [ "Hello World!" ]
