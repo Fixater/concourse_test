@@ -19,4 +19,4 @@ jobs:
               repository: busybox
           run:
             path: echo
-            args: [ "Hello World!" ]
+            args: [ "Another World" ]
