@@ -4,21 +4,25 @@ resources:
     source:
       uri: https://github.com/Fixater/concourse_test.git
 
+
+
 jobs:
-  - name: hello-world-job
+  - name: test
     plan:
     # Add a get step referencing the resource
       - get: repo
         trigger: true # tell Concourse to trigger this job when new versions are emitted
-      - task: hello-world-task
+      - task: test-task
         config:
           platform: linux
           image_resource:
-            type: registry-image
+            type: docker-image
             source:
-              repository: busybox
+              repository: mesosphere/aws-cli
           inputs:
           - name: repo
           run:
-            path: cat
-            args: [ "repo/README.md" ]
+            path: aws
+            args: [ --version ]
+            #path: echo
+            #args: [ "Vault token =  ((packer.vault_access_token))" ]
