@@ -1,0 +1,76 @@
+{
+  "variables": {
+    "accounts_to_share_ami_to": "301225849771,524348734179,955699136787,094621658575,393561032448,316691665945,903029128219,243338710464,741148396595",
+    "aws_region": "eu-west-1",
+    "dest_ami_name": "CentOS-7-1801-HVM-MDS-@{{timestamp}}"
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "region": "{{user `aws_region`}}",
+    "run_tags": {
+      "Name": "packer-builder:centos-7-mds",
+      "Tier": "priv",
+      "Role": "packer-builder",
+      "Project": "core",
+      "MappingCode": "acc-core-prod"
+    },
+    "source_ami_filter": {
+      "filters": {
+        "virtualization-type": "hvm",
+        "name": "CentOS Linux 7 x86_64 HVM EBS 1801*",
+        "root-device-type": "ebs"
+      },
+      "owners": [
+        "679593333241"
+      ],
+      "most_recent": true
+    },
+    "instance_type": "t2.micro",
+    "ami_users": "{{user `accounts_to_share_ami_to`}}",
+    "ami_block_device_mappings": [{
+      "device_name": "/dev/sda1",
+      "volume_type": "gp2",
+      "delete_on_termination": true
+    }],
+    "force_deregister": "true",
+    "ssh_username": "centos",
+    "ssh_pty": true,
+    "ami_name": "{{user `dest_ami_name`}}",
+    "ami_description": "CentOS 7 HVM AMI based on the official Marketplace image. MDS specialised image with patches applied.",
+    "ena_support": true,
+    "subnet_id": "subnet-29f11573"
+  }],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "resources/files/centos/7/infra-ansible-repo",
+      "destination": "/tmp"
+    },
+    {
+      "type": "file",
+      "source": "resources/files/centos/7/rpm-gpg",
+      "destination": "/tmp"
+    },
+    {
+      "type": "shell",
+      "environment_vars": [],
+      "execute_command": "chmod +x {{ .Path  }}; sudo {{ .Vars  }} {{ .Path  }}",
+      "script": "resources/scripts/yum-update.sh"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo mv -v -f /tmp/infra-ansible-repo/* /etc/yum.repos.d/",
+        "sudo yum install ansible -y",
+        "sudo yum install infra-ansible -y",
+        "sudo sh -c \"(cd /opt/ansible-code/; ansible-playbook playbook_mds_base.yml --extra-vars arqiva_environment=prod)\""
+      ]
+    },
+    {
+      "type": "shell",
+      "environment_vars": [],
+      "execute_command": "chmod +x {{ .Path  }}; sudo {{ .Vars  }} {{ .Path  }}",
+      "script": "resources/scripts/clean-yum-cache.sh"
+    }
+  ]
+}
